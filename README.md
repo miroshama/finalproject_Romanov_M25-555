@@ -45,6 +45,7 @@ finalproject_Romanov_M25-555/
 ├── main.py                  # Точка входа
 ├── pyproject.toml           # Настройки Poetry и проекта
 └── Makefile                 # Команды автоматизации
+```
 
 ## 💻 Команды CLI
 
