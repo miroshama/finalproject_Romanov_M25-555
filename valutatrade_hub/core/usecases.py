@@ -95,7 +95,10 @@ class SystemCore:
         Функция получения оценок 
         '''
         rates_file = self.settings.get('rates_file', 'rates.json')
-        return self.db.load(rates_file)
+        data = self.db.load(rates_file)
+        if "pairs" in data:
+            return data["pairs"]
+        return data
 
     def get_rate(self, from_curr, to_curr):
         '''
