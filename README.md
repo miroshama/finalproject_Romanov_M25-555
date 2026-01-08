@@ -41,7 +41,6 @@ finalproject_Romanov_M25-555/
 │   ├── parser_service/      # Сервис сбора данных из внешних API
 │   ├── decorators.py        # Логирование @log_action
 │   └── logging_config.py    # Конфигурация ротации логов
-├── .env                     # API-ключи (не отслеживается Git)
 ├── main.py                  # Точка входа
 ├── pyproject.toml           # Настройки Poetry и проекта
 └── Makefile                 # Команды автоматизации
