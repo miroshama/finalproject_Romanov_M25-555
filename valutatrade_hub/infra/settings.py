@@ -1,7 +1,6 @@
 # valutatrade_hub/infra/settings.py
 
 import os
-import json
 from typing import Any, Dict
 
 try:
@@ -51,7 +50,7 @@ class SettingsLoader:
                     valuta_cfg = config_data.get('tool', {}).get('valutatrade', {})
                     if valuta_cfg:
                         self._settings.update(valuta_cfg)
-        except Exception as e:
+        except Exception:
             pass
         
         env_mapping = {

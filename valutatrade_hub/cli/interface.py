@@ -1,12 +1,8 @@
 # valutatrade_hub/cli/interface.py
 
-import sys
 import shlex
-from datetime import datetime
 from ..core.usecases import SystemCore
-from ..core.models import User
 from ..core.exceptions import (
-    ValutaTradeError, 
     InsufficientFundsError, 
     CurrencyNotFoundError, 
     ApiRequestError

@@ -1,6 +1,5 @@
 # valutatrade_hub/parser_service/storage.py
 
-import uuid
 from datetime import datetime
 from ..infra.database import db_manager
 from .config import parser_config
