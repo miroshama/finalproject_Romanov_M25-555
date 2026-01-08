@@ -3,6 +3,7 @@
 import os
 from dataclasses import dataclass
 from typing import Tuple, Dict
+from dotenv import load_dotenv
 
 @dataclass
 class ParserConfig:
