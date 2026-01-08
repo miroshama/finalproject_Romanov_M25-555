@@ -28,4 +28,4 @@ dev = [
 [tool.valutatrade]
 rates_ttl_seconds = 600
 default_base_currency = "EUR"
-data_directory = "my_custom_data_folder"
+data_directory = "data"
