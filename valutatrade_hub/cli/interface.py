@@ -1,10 +1,7 @@
 # valutatrade_hub/cli/interface.py
 
-import sys
 import shlex
-from datetime import datetime
 from ..core.usecases import SystemCore
-from ..core.models import User
 
 class CLI:
     def __init__(self):

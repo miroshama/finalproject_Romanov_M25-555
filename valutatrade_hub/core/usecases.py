@@ -1,8 +1,7 @@
 # valutatrade_hub/core/usecases.py
 
-from .models import User, Portfolio, Wallet
+from .models import User, Portfolio
 from .utils import load_json, save_json
-from datetime import datetime
 
 USERS_FILE = 'users.json'
 PORTFOLIOS_FILE = 'portfolios.json'
