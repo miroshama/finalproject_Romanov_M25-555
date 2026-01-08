@@ -1,7 +1,17 @@
 # valutatrade_hub/cli/interface.py
 
+import sys
 import shlex
+from datetime import datetime
 from ..core.usecases import SystemCore
+from ..core.models import User
+from ..core.exceptions import (
+    ValutaTradeError, 
+    InsufficientFundsError, 
+    CurrencyNotFoundError, 
+    ApiRequestError
+)
+from ..core.currencies import _REGISTRY as CURRENCY_REGISTRY
 
 class CLI:
     def __init__(self):
@@ -9,10 +19,7 @@ class CLI:
         self.current_user = None
 
     def run(self):
-        '''
-        Функция для запуска интерфейса
-        '''
-        print("=== ValutaTrade Hub v1.0 ===")
+        print("=== ValutaTrade Hub v2.0 ===")
         print("Доступные команды: register, login, show-portfolio, buy, sell, get-rate, exit, help")
         
         while True:
@@ -22,7 +29,12 @@ class CLI:
                 else:
                     prompt = "> "
                 
-                command_line = input(prompt).strip()
+                try:
+                    command_line = input(prompt).strip()
+                except EOFError:
+                    print("\nВыход...")
+                    break
+                
                 if not command_line:
                     continue
                 
@@ -57,102 +69,103 @@ class CLI:
                 print("\nВыход...")
                 break
             except Exception as e:
-                print(f"Ошибка: {e}")
+                print(f"Критическая ошибка: {e}")
 
     def _parse_args(self, args_list):
-        '''
-        Функция парсинга строки в словарный вид
-        '''
         parsed = {}
         iterator = iter(args_list)
         try:
             for arg in iterator:
                 if arg.startswith('--'):
                     key = arg[2:]
-                    value = next(iterator)
-                    parsed[key] = value
+                    try:
+                        value = next(iterator)
+                        parsed[key] = value
+                    except StopIteration:
+                        print(f"Ошибка: аргумент --{key} требует значения")
+                        return None
         except StopIteration:
             pass
         return parsed
 
     def handle_register(self, args):
-        '''
-        Функция обработки регистрации
-        '''
         params = self._parse_args(args)
-        if 'username' not in params or 'password' not in params:
+        if not params or 'username' not in params or 'password' not in params:
             print("Ошибка: укажите --username и --password")
             return
         
         try:
             user = self.core.register_user(params['username'], params['password'])
-            print(f"Пользователь '{user.username}' зарегистрирован (id={user.user_id}).")
-            print("Бонус 1000 USD начислен! Войдите в систему.")
+            print(f"Пользователь '{user.username}' успешно зарегистрирован (id={user.user_id}).")
+            print("Бонус 1000 USD начислен! Теперь выполните вход (login).")
         except ValueError as e:
-            print(str(e))
+            print(f"Ошибка регистрации: {e}")
+        except Exception as e:
+            print(f"Ошибка: {e}")
 
     def handle_login(self, args):
-        '''
-        Функция для обработки логина
-        '''
         params = self._parse_args(args)
-        if 'username' not in params or 'password' not in params:
+        if not params or 'username' not in params or 'password' not in params:
             print("Ошибка: укажите --username и --password")
             return
             
         try:
             user = self.core.login_user(params['username'], params['password'])
             self.current_user = user
-            print(f"Вы вошли как '{user.username}'")
+            print(f"Добро пожаловать, {user.username}!")
         except ValueError as e:
-            print(str(e))
+            print(f"Ошибка входа: {e}")
 
     def handle_show_portfolio(self, args):
-        '''
-        Функция обработки показа портфолио
-        '''
         if not self.current_user:
             print("Сначала выполните login")
             return
             
-        params = self._parse_args(args)
-        base = params.get('base', 'USD')
+        params = self._parse_args(args) or {}
+        base = params.get('base', self.core.settings.get('default_base_currency', 'USD'))
         
-        portfolio = self.core.get_portfolio(self.current_user.user_id)
-        rates = self.core.get_rates()
-        
-        print(f"Портфель пользователя '{self.current_user.username}' (база: {base}):")
-        
-        total_val = portfolio.get_total_value(base, rates)
-        wallets = portfolio.wallets
-        
-        if not wallets:
-            print("Портфель пуст.")
-        
-        for code, wallet in wallets.items():
-            val_in_base = 0
-            if code == base:
-                val_in_base = wallet.balance
-            else:
-                pair = f"{code}_{base}"
-                if pair in rates:
-                    val_in_base = wallet.balance * rates[pair]['rate']
+        try:
+            portfolio = self.core.get_portfolio(self.current_user.user_id)
+            rates_data = self.core.get_rates()
             
-            print(f"- {code}: {wallet.balance:.4f} \t-> {val_in_base:.2f} {base}")
+            print(f"\nПортфель пользователя '{self.current_user.username}' (оценка в {base}):")
+            print("-" * 50)
             
-        print("-" * 30)
-        print(f"ИТОГО: {total_val:.2f} {base}")
+            total_val = 0.0
+            wallets = portfolio.wallets
+            
+            if not wallets:
+                print("Портфель пуст.")
+            
+            for code, wallet in wallets.items():
+                val_in_base = 0.0
+                if code == base:
+                    val_in_base = wallet.balance
+                else:
+                    pair = f"{code}_{base}"
+                    rev_pair = f"{base}_{code}"
+                    
+                    if pair in rates_data:
+                        val_in_base = wallet.balance * rates_data[pair]['rate']
+                    elif rev_pair in rates_data:
+                        val_in_base = wallet.balance * (1 / rates_data[rev_pair]['rate'])
+                
+                total_val += val_in_base
+                print(f"- {code:<5}: {wallet.balance:>12.4f}  -> {val_in_base:>12.2f} {base}")
+                
+            print("-" * 50)
+            print(f"ИТОГО : {total_val:>12.2f} {base}\n")
+            
+        except Exception as e:
+            print(f"Ошибка при отображении портфеля: {e}")
 
     def handle_buy(self, args):
-        '''
-        Функция обработки покупки
-        '''
         if not self.current_user:
             print("Сначала выполните login")
             return
 
         params = self._parse_args(args)
-        if 'currency' not in params or 'amount' not in params:
+        if not params or 'currency' not in params or 'amount' not in params:
             print("Использование: buy --currency <CODE> --amount <NUM>")
             return
 
@@ -161,22 +174,30 @@ class CLI:
             amount = float(params['amount'])
             
             cost, rate = self.core.buy_currency(self.current_user, currency, amount)
-            print(f"Покупка выполнена: {amount} {currency} по курсу {rate} USD.")
-            print(f"Списано: {cost:.2f} USD")
+            
+            base = self.core.settings.get('default_base_currency', 'USD')
+            print(f"Покупка успешно выполнена: {amount} {currency.upper()}")
+            print(f"Курс сделки: {rate} {base}")
+            print(f"Списано:     {cost:.2f} {base}")
             
         except ValueError as e:
+            print(f"Ошибка валидации: {e}")
+        except InsufficientFundsError as e:
+            print(f"Ошибка: {e}")
+        except CurrencyNotFoundError as e:
+            print(f"Ошибка: {e}. Проверьте правильность кода валюты.")
+        except ApiRequestError as e:
+            print(f"Ошибка API: {e}. Попробуйте позже.")
+        except Exception as e:
             print(f"Ошибка транзакции: {e}")
 
     def handle_sell(self, args):
-        '''
-        Функция обработки продажи
-        '''
         if not self.current_user:
             print("Сначала выполните login")
             return
 
         params = self._parse_args(args)
-        if 'currency' not in params or 'amount' not in params:
+        if not params or 'currency' not in params or 'amount' not in params:
             print("Использование: sell --currency <CODE> --amount <NUM>")
             return
 
@@ -185,18 +206,26 @@ class CLI:
             amount = float(params['amount'])
             
             revenue, rate = self.core.sell_currency(self.current_user, currency, amount)
-            print(f"Продажа выполнена: {amount} {currency} по курсу {rate} USD.")
-            print(f"Получено: {revenue:.2f} USD")
+            
+            base = self.core.settings.get('default_base_currency', 'USD')
+            print(f"Продажа успешно выполнена: {amount} {currency.upper()}")
+            print(f"Курс сделки: {rate} {base}")
+            print(f"Получено:    {revenue:.2f} {base}")
             
         except ValueError as e:
+            print(f"Ошибка валидации: {e}")
+        except InsufficientFundsError as e:
+            print(f"Ошибка: {e}")
+        except CurrencyNotFoundError as e:
+            print(f"Ошибка: {e}")
+        except ApiRequestError as e:
+            print(f"Ошибка API: {e}")
+        except Exception as e:
             print(f"Ошибка транзакции: {e}")
 
     def handle_get_rate(self, args):
-        '''
-        Функция обработки показа оценки
-        '''
         params = self._parse_args(args)
-        if 'from' not in params or 'to' not in params:
+        if not params or 'from' not in params or 'to' not in params:
             print("Использование: get-rate --from <CODE> --to <CODE>")
             return
             
@@ -204,21 +233,28 @@ class CLI:
             val, updated = self.core.get_rate(params['from'], params['to'])
             print(f"Курс {params['from'].upper()} -> {params['to'].upper()}: {val}")
             print(f"(Обновлено: {updated})")
-        except ValueError as e:
-            print(e)
+            
+        except CurrencyNotFoundError as e:
+            print(f"Ошибка: {e}")
+            available = ", ".join(sorted(CURRENCY_REGISTRY.keys()))
+            print(f"Доступные валюты: {available}")
+            
+        except ApiRequestError as e:
+            print(f"Ошибка API: {e}")
+            print("Возможно, сервис обновлений недоступен или пара не торгуется.")
+            
+        except Exception as e:
+            print(f"Ошибка: {e}")
 
     def print_help(self):
-        '''
-        Функция вывода справочной информации
-        '''
         print("""
         Команды:
         register --username <name> --password <pass>
         login --username <name> --password <pass>
         logout
         show-portfolio [--base <USD|EUR|...>]
-        buy --currency <CODE> --amount <float> (покупка за USD)
-        sell --currency <CODE> --amount <float> (продажа за USD)
+        buy --currency <CODE> --amount <float>
+        sell --currency <CODE> --amount <float>
         get-rate --from <CODE> --to <CODE>
         exit
         """)
