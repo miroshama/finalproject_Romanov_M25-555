@@ -1,8 +1,10 @@
 # valutatrade_hub/core/models.py
 
-import uuid
 import datetime
+import uuid
+
 from .utils import hash_password
+
 
 class User:
     '''

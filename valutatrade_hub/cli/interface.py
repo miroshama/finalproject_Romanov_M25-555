@@ -1,16 +1,14 @@
 # valutatrade_hub/cli/interface.py
 
 import shlex
-from ..core.usecases import SystemCore
-from ..core.exceptions import (
-    InsufficientFundsError, 
-    CurrencyNotFoundError, 
-    ApiRequestError
-)
-from ..parser_service.updater import RatesUpdater
-from ..parser_service.config import parser_config
-from ..infra.database import db_manager
+
 from ..core.currencies import _CURRENCY_REGISTRY as CURRENCY_REGISTRY
+from ..core.exceptions import ApiRequestError, CurrencyNotFoundError, InsufficientFundsError
+from ..core.usecases import SystemCore
+from ..infra.database import db_manager
+from ..parser_service.config import parser_config
+from ..parser_service.updater import RatesUpdater
+
 
 class CLI:
     '''

@@ -1,8 +1,10 @@
 # valutatrade_hub/parser_service/storage.py
 
 from datetime import datetime
+
 from ..infra.database import db_manager
 from .config import parser_config
+
 
 class RatesStorage:
     def __init__(self):

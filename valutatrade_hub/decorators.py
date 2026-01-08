@@ -1,7 +1,9 @@
 # valutatrade_hub/decorators.py
 
 import functools
+
 from .logging_config import app_logger
+
 
 def log_action(action_name):
     '''

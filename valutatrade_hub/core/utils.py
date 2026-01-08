@@ -1,8 +1,8 @@
 # valutatrade_hub/core/utils.py
 
+import hashlib
 import json
 import os
-import hashlib
 from datetime import datetime
 
 DATA_DIR = os.path.join(os.getcwd(), 'data')

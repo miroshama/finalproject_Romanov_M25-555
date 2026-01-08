@@ -1,9 +1,10 @@
 # valutatrade_hub/parser_service/updater.py
 
-from .api_clients import CoinGeckoClient, ExchangeRateApiClient
-from .storage import RatesStorage
 from ..core.exceptions import ApiRequestError
 from ..logging_config import app_logger
+from .api_clients import CoinGeckoClient, ExchangeRateApiClient
+from .storage import RatesStorage
+
 
 class RatesUpdater:
     def __init__(self):

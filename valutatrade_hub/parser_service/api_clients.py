@@ -1,9 +1,12 @@
 # valutatrade_hub/parser_service/api_clients.py
-import requests
 from abc import ABC, abstractmethod
 from datetime import datetime
-from .config import parser_config
+
+import requests
+
 from ..core.exceptions import ApiRequestError
+from .config import parser_config
+
 
 class BaseApiClient(ABC):
     @abstractmethod
