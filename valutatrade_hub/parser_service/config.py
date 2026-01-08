@@ -6,6 +6,9 @@ from typing import Tuple, Dict
 
 @dataclass
 class ParserConfig:
+    '''
+    Конфигуратор парсерса валют
+    '''
 
     EXCHANGERATE_API_KEY: str = os.getenv("EXCHANGERATE_API_KEY", "") 
 
