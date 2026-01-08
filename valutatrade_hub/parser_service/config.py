@@ -1,16 +1,13 @@
 # valutatrade_hub/parser_service/config.py
 
 import os
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Tuple, Dict
 
 @dataclass
 class ParserConfig:
-    '''
-    Конфигуратор парсерса валют
-    '''
-
-    EXCHANGERATE_API_KEY: str = os.getenv("EXCHANGERATE_API_KEY", "") 
+    EXCHANGERATE_API_KEY: str = os.getenv("EXCHANGERATE_API_KEY")
 
     COINGECKO_URL: str = "https://api.coingecko.com/api/v3/simple/price"
     EXCHANGERATE_API_URL: str = "https://v6.exchangerate-api.com/v6"

@@ -69,13 +69,13 @@ class ExchangeRateApiClient(BaseApiClient):
 
         result = {}
         now = datetime.utcnow().isoformat()
-        rates = data.get('rates', {})
+        
+        rates = data.get('conversion_rates', {}) 
         
         for fiat_code in parser_config.FIAT_CURRENCIES:
             if fiat_code in rates:
                 key = f"{fiat_code}_{base}"
                 result[key] = {
-
                     "rate": 1 / float(rates[fiat_code]),
                     "updated_at": now,
                     "source": "ExchangeRate-API"

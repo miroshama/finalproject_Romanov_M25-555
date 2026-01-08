@@ -10,7 +10,7 @@ from ..core.exceptions import (
 from ..parser_service.updater import RatesUpdater
 from ..parser_service.config import parser_config
 from ..infra.database import db_manager
-from ..core.currencies import _REGISTRY as CURRENCY_REGISTRY
+from ..core.currencies import _CURRENCY_REGISTRY as CURRENCY_REGISTRY
 
 class CLI:
     '''
