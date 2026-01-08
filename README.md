@@ -74,6 +74,10 @@ finalproject_Romanov_M25-555/
 | `make build` | Сборка проекта в пакет |
 | `make publish` | Публикация пакета |
 
+## 🎥 Демонстрация asciinema
+
+[![asciicast](https://asciinema.org/a/5KeRAazl1LEbXcUl.svg)](https://asciinema.org/a/5KeRAazl1LEbXcUl)
+
 ---
 **Разработчик:** Михаил Романов  
 **Группа:** М25-555  
