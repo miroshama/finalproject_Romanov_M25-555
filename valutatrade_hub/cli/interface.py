@@ -11,7 +11,7 @@ from ..core.exceptions import (
     CurrencyNotFoundError, 
     ApiRequestError
 )
-from ..core.currencies import _REGISTRY as CURRENCY_REGISTRY
+from ..core.currencies import _CURRENCY_REGISTRY as CURRENCY_REGISTRY
 
 class CLI:
     def __init__(self):
