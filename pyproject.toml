@@ -4,9 +4,7 @@ version = "0.1.0"
 description = "Project 3 python MEPhI Course"
 authors = ["Mikhail Romanov <miroshama@gmail.com>"]
 readme = "README.md"
-packages = [
-    { include = "valutatrade_hub", from = "." }
-]
+packages = [{include = "valutatrade_hub"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
