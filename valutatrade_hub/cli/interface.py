@@ -7,16 +7,22 @@ from ..core.exceptions import (
     CurrencyNotFoundError, 
     ApiRequestError
 )
-from ..core.currencies import _CURRENCY_REGISTRY as CURRENCY_REGISTRY
+from ..parser_service.updater import RatesUpdater
+from ..parser_service.config import parser_config
+from ..infra.database import db_manager
+from ..core.currencies import _REGISTRY as CURRENCY_REGISTRY
 
 class CLI:
+    '''
+    Класс реализации интерфейса
+    '''
     def __init__(self):
         self.core = SystemCore()
         self.current_user = None
 
     def run(self):
-        print("=== ValutaTrade Hub v2.0 ===")
-        print("Доступные команды: register, login, show-portfolio, buy, sell, get-rate, exit, help")
+        print("=== ValutaTrade Hub v2.1 ===")
+        print("Команды: register, login, show-portfolio, buy, sell, get-rate, update-rates, show-rates, exit, help")
         
         while True:
             try:
@@ -55,6 +61,10 @@ class CLI:
                     self.handle_sell(args)
                 elif command == 'get-rate':
                     self.handle_get_rate(args)
+                elif command == 'update-rates':
+                    self.handle_update_rates(args)
+                elif command == 'show-rates':
+                    self.handle_show_rates(args)
                 elif command == 'logout':
                     self.current_user = None
                     print("Вы вышли из системы.")
@@ -85,6 +95,9 @@ class CLI:
         return parsed
 
     def handle_register(self, args):
+        '''
+        Обработка регистрации нового пользователя
+        '''
         params = self._parse_args(args)
         if not params or 'username' not in params or 'password' not in params:
             print("Ошибка: укажите --username и --password")
@@ -100,6 +113,9 @@ class CLI:
             print(f"Ошибка: {e}")
 
     def handle_login(self, args):
+        '''
+        Обработка авторизации
+        '''
         params = self._parse_args(args)
         if not params or 'username' not in params or 'password' not in params:
             print("Ошибка: укажите --username и --password")
@@ -113,6 +129,9 @@ class CLI:
             print(f"Ошибка входа: {e}")
 
     def handle_show_portfolio(self, args):
+        '''
+        Обработка показа портфолио
+        '''
         if not self.current_user:
             print("Сначала выполните login")
             return
@@ -156,6 +175,9 @@ class CLI:
             print(f"Ошибка при отображении портфеля: {e}")
 
     def handle_buy(self, args):
+        '''
+        Обработка покупки
+        '''
         if not self.current_user:
             print("Сначала выполните login")
             return
@@ -188,6 +210,9 @@ class CLI:
             print(f"Ошибка транзакции: {e}")
 
     def handle_sell(self, args):
+        '''
+        Обработка продажи
+        '''
         if not self.current_user:
             print("Сначала выполните login")
             return
@@ -220,6 +245,9 @@ class CLI:
             print(f"Ошибка транзакции: {e}")
 
     def handle_get_rate(self, args):
+        '''
+        Обработка получения курсов
+        '''
         params = self._parse_args(args)
         if not params or 'from' not in params or 'to' not in params:
             print("Использование: get-rate --from <CODE> --to <CODE>")
@@ -242,15 +270,84 @@ class CLI:
         except Exception as e:
             print(f"Ошибка: {e}")
 
+    def handle_update_rates(self, args):
+        '''
+        Функция для запуска обновления курсов из API
+        '''
+        params = self._parse_args(args) or {}
+        source = params.get('source')
+        
+        print("Запуск обновления курсов из внешних источников...")
+        updater = RatesUpdater()
+        
+        try:
+            count = updater.run_update(source)
+            if count > 0:
+                print(f"Обновление завершено. Всего обновлено пар: {count}.")
+            else:
+                print("Новых данных не получено. Проверьте соединение или API ключи.")
+        except Exception as e:
+            print(f"Критическая ошибка при обновлении: {e}")
+
+    def handle_show_rates(self, args):
+        '''
+        Функция для демонстрации актуальных курсов
+        '''
+        params = self._parse_args(args) or {}
+        currency_filter = params.get('currency')
+        top_n = int(params.get('top', 0))
+        
+        raw_data = db_manager.load(parser_config.RATES_FILE)
+        
+        if isinstance(raw_data, dict) and "pairs" in raw_data:
+            rates_data = raw_data["pairs"]
+            updated_at = raw_data.get("last_refresh", "Unknown")
+        else:
+            rates_data = raw_data
+            updated_at = "Unknown (Legacy format)"
+
+        if not rates_data:
+            print("Локальный кеш курсов пуст. Выполните 'update-rates'.")
+            return
+
+        print(f"\nАктуальные курсы из кеша (обновлено: {updated_at}):")
+        print("-" * 40)
+        
+        items = []
+        for pair, info in rates_data.items():
+            rate_val = info['rate'] if isinstance(info, dict) else info
+            items.append((pair, rate_val))
+
+        if currency_filter:
+            curr = currency_filter.upper()
+            items = [x for x in items if curr in x[0]]
+            if not items:
+                print(f"Курс для валюты '{curr}' не найден.")
+                return
+
+        if top_n > 0:
+            items.sort(key=lambda x: x[1], reverse=True)
+            items = items[:top_n]
+        else:
+            items.sort(key=lambda x: x[0])
+
+        for pair, rate in items:
+            print(f"{pair:<10}: {rate:>15.6f}")
+        print("-" * 40 + "\n")
+
     def print_help(self):
         print("""
-        Команды:
-        register --username <name> --password <pass>
-        login --username <name> --password <pass>
-        logout
-        show-portfolio [--base <USD|EUR|...>]
-        buy --currency <CODE> --amount <float>
-        sell --currency <CODE> --amount <float>
-        get-rate --from <CODE> --to <CODE>
-        exit
+        Доступные команды:
+        -----------------
+        register --username <name> --password <pass> - Регистрация
+        login    --username <name> --password <pass> - Вход
+        logout                                       - Выход
+        show-portfolio [--base <CODE>]               - Состояние кошелька
+        buy      --currency <CODE> --amount <num>    - Купить валюту
+        sell     --currency <CODE> --amount <num>    - Продать валюту
+        get-rate --from <CODE> --to <CODE>           - Получить курс пары
+        update-rates [--source <name>]               - Обновить курсы из API
+        show-rates   [--currency <CODE>] [--top <N>] - Показать кеш курсов
+        exit                                         - Завершить работу
+        help                                         - Показать это сообщение
         """)
