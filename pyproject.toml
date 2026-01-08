@@ -16,14 +16,21 @@ python-dotenv = "^1.2.1"
 [tool.poetry.scripts]
 project = "main:main"
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.14.11"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[dependency-groups]
-dev = [
-    "ruff (>=0.14.10,<0.15.0)"
-]
+[tool.ruff]
+line-length = 145
+target-version = "py312"
+exclude = ["venv", ".venv", "dist", "pycache"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []
 
 [tool.valutatrade]
 rates_ttl_seconds = 600
